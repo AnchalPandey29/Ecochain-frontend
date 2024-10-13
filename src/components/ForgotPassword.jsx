@@ -3,7 +3,7 @@ import { Box, TextField, Button, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
+import { resetuser, verifyEmail, verifyOtp } from '../services/apicalls';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -21,7 +21,7 @@ const ForgotPassword = () => {
     }
 
     try {
-        const response = await axios.post('http://localhost:5000/api/send-otp', { email });
+        const response = await verifyEmail(email);
         if (response.data.success) {
         setShowOtpField(true);
         toast.success('OTP sent to your email!');
@@ -41,8 +41,9 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await axios.post('/api/verify-otp', { email, otp });
-      if (response.data.success) {
+      const data={email:email,otp:otp};
+      const response = await verifyOtp(data);
+      if (response.status===200) {
         setShowResetForm(true);
         toast.success('OTP verified! Reset your password.');
       } else {
@@ -66,7 +67,8 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await axios.post('/api/reset-password', { email, password });
+      const data={email:email,password:password,otp:otp};
+      const response = await resetuser(data);
       if (response.data.success) {
         toast.success('Password reset successful!');
       } else {

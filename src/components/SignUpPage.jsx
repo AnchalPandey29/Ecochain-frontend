@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Link, useMediaQuery, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+import { Box, TextField, Button, Typography, useMediaQuery, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import { createUsers } from '../services/apicalls';
+import { useAuth } from '../AuthContext';
 
 const SignUpPage = () => {
+  const {login}=useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -56,24 +59,22 @@ const SignUpPage = () => {
     }
 
     // Proceed with signup logic (API call)
-    const userData = { fullName, email, phoneNumber, password, role };
+    const userData = { name: fullName, email, mobile: phoneNumber, password, role };
 
     try {
-      const response = await fetch('http://localhost:5000/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
+      const response = await createUsers(userData);
+      console.log(response);
+      if (response.status === 200) {
+        const { user, token } = response.data; // Adjust based on your response structure
+        login(user, token); // Automatically log in after signup
+        toast.success("Registered successfully, Redirecting to Log In");
+        setTimeout(() => {
+          navigate("/"); // Redirect to the main page or dashboard
+        }, 6000);
 
-      if (response.ok) {
-        const result = await response.json();
-        toast.success('Sign up successful!');
-        navigate('/login');  // Redirect to login page after successful signup
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Sign up failed.');
+        // Handle error case based on response.error.error or fallback error message
+        toast.error(response.error);
       }
     } catch (error) {
       toast.error('An error occurred during signup. Please try again.');
@@ -170,8 +171,8 @@ const SignUpPage = () => {
             value={role}
             onChange={(e) => setRole(e.target.value)}
           >
-            <FormControlLabel value="manufacturer" control={<Radio />} label="Manufacturer" />
-            <FormControlLabel value="consumer" control={<Radio />} label="Consumer" />
+            <FormControlLabel value="collector" control={<Radio />} label="Collector" />
+            <FormControlLabel value="user" control={<Radio />} label="User" />
           </RadioGroup>
 
           <Button

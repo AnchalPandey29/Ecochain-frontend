@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Link, useMediaQuery } from '@mui/material';
+import { Box, TextField, Button, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { loginUser } from '../services/apicalls';
+import { useAuth } from '../AuthContext'; // Use the custom hook
 
 const LoginPage = () => {
-    const navigate=useNavigate();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -14,16 +17,29 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  // Get login function and user state from AuthContext
+  const { login } = useAuth(); // Correctly use the useAuth hook
+
   // Function to handle form submission
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Dummy authentication logic (replace with your API call)
-    if (email === 'test@example.com' && password === 'password123') {
-      alert('Logged in successfully!');
-      setError('');
-    } else {
-      setError('Invalid email or password.');
+    const userData = { email, password };
+    try {
+      const response = await loginUser(userData);
+      if (response.status === 200) {
+        toast.success("Login Successful");
+        const { user, token } = response.data;
+
+        // Use context API to log the user in
+        login(user, token);
+
+        // Redirect to home or another page
+        navigate('/userdashboard'); 
+      }
+    } catch (err) {
+      setError('Invalid email or password'); // Handle error messages
+      toast.error("Login failed. Please try again.");
     }
   };
 
@@ -92,16 +108,11 @@ const LoginPage = () => {
           </Button>
 
           {/* Forgot password and Signup options */}
-          <Box mt={2} display="flex" justifyContent="space-between" sx={{cursor:"pointer"}}>
-            <Typography onClick={()=>{
-                navigate('/forgotpassword')
-            }}  
-                variant="body2">
+          <Box mt={2} display="flex" justifyContent="space-between" sx={{ cursor: "pointer" }}>
+            <Typography onClick={() => navigate('/forgotpassword')} variant="body2">
               Forgot Password?
             </Typography>
-            <Typography onClick={()=>{
-                navigate('/signup')
-            }} variant="body2">
+            <Typography onClick={() => navigate('/signup')} variant="body2">
               Don't have an account? Sign Up
             </Typography>
           </Box>

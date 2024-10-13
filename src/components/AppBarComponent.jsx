@@ -5,8 +5,10 @@ import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom'; // Assuming react-router-dom is used for routing
+import { useAuth } from '../AuthContext';
 
-const AppBarComponent = ({ isLoggedIn }) => {
+const AppBarComponent = () => {
+  const { isLoggedIn, logout, role } = useAuth(); // Added role from useAuth context
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -16,19 +18,28 @@ const AppBarComponent = ({ isLoggedIn }) => {
     setDrawerOpen(open);
   };
 
-  // Navigation function to handle button clicks
   const handleNavigation = (path) => {
     navigate(path);
   };
 
-  // Navbar items for both logged in and logged out states
+  const handleLogout = () => {
+    logout();
+    navigate('/login'); // Redirect to login after logout
+  };
+
+  // Conditional rendering of nav items based on role
   const navItems = isLoggedIn
-    ? [
-        { text: 'Waste Tracking', path: '/waste-tracking' },
-        { text: 'Report Issue', path: '/report-issue' },
-        { text: 'My Profile', path: '/profile' },
-        { text: 'Logout', path: '/logout' },
-      ]
+    ? role === 'collector'
+      ? [
+          { text: 'Collection Requests', path: '/collection-requests' },
+          { text: 'My Profile', path: '/profile' },
+          { text: 'Logout', action: handleLogout }, // No 'path', only 'action'
+        ]
+      : [
+          { text: 'Report Waste', path: '/report' },
+          { text: 'My Profile', path: '/userprofile' },
+          { text: 'Logout', action: handleLogout }, // No 'path', only 'action'
+        ]
     : [
         { text: 'Login', path: '/login' },
         { text: 'Signup', path: '/signup' },
@@ -40,7 +51,13 @@ const AppBarComponent = ({ isLoggedIn }) => {
         Home
       </ListItem>
       {navItems.map((item, index) => (
-        <ListItem button key={index} onClick={() => handleNavigation(item.path)}>
+        <ListItem
+          button
+          key={index}
+          onClick={() => {
+            item.action ? item.action() : handleNavigation(item.path);
+          }}
+        >
           {item.text}
         </ListItem>
       ))}
@@ -55,7 +72,6 @@ const AppBarComponent = ({ isLoggedIn }) => {
             EcoChain
           </Typography>
           {isMobile ? (
-            // Mobile View: Hamburger Menu
             <>
               <IconButton
                 color="inherit"
@@ -74,7 +90,6 @@ const AppBarComponent = ({ isLoggedIn }) => {
               </Drawer>
             </>
           ) : (
-            // Desktop View: Regular Buttons
             <>
               <Button color="inherit" onClick={() => handleNavigation('/')}>
                 Home
@@ -86,7 +101,12 @@ const AppBarComponent = ({ isLoggedIn }) => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
-                  <Button color="inherit" onClick={() => handleNavigation(item.path)}>
+                  <Button
+                    color="inherit"
+                    onClick={() => {
+                      item.action ? item.action() : handleNavigation(item.path);
+                    }}
+                  >
                     {item.text}
                   </Button>
                 </motion.div>
